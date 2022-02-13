@@ -4,13 +4,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const ejs = require("ejs");
 
 //Initialiser l'application 
 const app = express();
-
-//Initialiser EJS 
-app.set('view engine', 'ejs');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 const port = 3000;
@@ -70,50 +66,81 @@ const naruto = new Book({
 // });
 
 // Permet de récupérer tout les documents de la collection
-app.get("/books", (req, res) => {
-    Book.find( {}, (err, books) => {
-        if(err){
-            console.log(err);
-        }else{
-            res.send(books);
-        }
-    });
-});
-
+app.route("/books")
+    .get((req, res) => {
+        Book.find( {}, (err, books) => {
+            if(err){
+                console.log(err);
+            }else{
+                console.log("Find sucess");
+                res.send(books);
+            }
+        });
+    })
 //Instance de nouveau livres grace a la methode post qui va les envoyer dans la bdd
-app.post("/books", (req, res) => {
-    const book = new Book({
-        title: req.body.title,
-        year: req.body.year,
-        mangaka: req.body.mangaka
-    });
-    book.save((err) => {
-        if(err){
-            console.log(err);
-        }else{
-            console.log("Book insert succes")
-        }
-    });
-});
-
+    .post((req, res) => {
+        const book = new Book({
+            title: req.body.title,
+            year: req.body.year,
+            mangaka: req.body.mangaka
+        });
+        book.save((err) => {
+            if(err){
+                console.log(err);
+            }else{
+                console.log("Book insert succes")
+            }
+        })
+    })
 //Suppression de tout les livres
-app.delete("/books", (req, res) => {
-    Book.deleteMany({}, (err) => {
-        if(err){
-            console.log(err);
-        }else{
-            console.log("Les livre ont été supprimés");
-        }
+    .delete((req, res) => {
+        Book.deleteMany({}, (err) => {
+            if(err){
+                console.log(err);
+            }else{
+                console.log("Les livre ont été supprimés");
+            }
+        })
     });
-});
+
 
 //Récupérer un livre en particulier
-app.get("/books/:titleBook", (req, res) => {
-    Book.findOne({title: req.params.titleBook}, (err, book) => {
-        if(err){
-            console.log(err);
-        }else{
-            res.send(book);
-        }
-    });
+app.route("/books/:titleBook")
+    .get((req, res) => {
+        Book.findOne({title: req.params.titleBook}, (err, book) => {
+            if(err){
+                console.log(err);
+            }else{
+                console.log("Find book sucess");
+                res.send(book);
+            }
+        })
+    })
+//Remplacer un livre 
+//(replaceOne au lieu de update: collection.update is deprecated )
+    .put((req,res) => {
+        Book.replaceOne(
+            {title : req.params.titleBook},
+            {
+            title : req.body.title, 
+            year : req.body.year, 
+            mangaka : req.body.mangaka
+            },
+            {overwrite : true},
+            (err) => err ? console.log(err) : console.log("Change ok")
+        );
+    })
+// Modifier une valeur d'un livre 
+    .patch((req, res) => {
+        Book.updateOne(
+            {name : req.params.titleBook}, 
+            {$set : req.body}, 
+            (err) => err ? console.log(err) : console.log("Modified ok")        
+        );
+    })
+//Supprimer un element 
+    .delete((req, res) => {
+        Book.deleteOne({name : req.params.titleBook}, 
+            (err) => err ? console.log(err) : console.log("Deleted ok")
+        );
 });
